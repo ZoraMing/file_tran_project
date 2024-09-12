@@ -20,6 +20,11 @@ class LoginForm(BootStrapForm):
         pwd = self.cleaned_data.get("password")
         return md5(pwd)
 
+def validator_type(file):
+    suffix_list = (".png", ".jpg", ".txt",".html",".doc",".zip",".gz")
+    if not file.name.endwith(suffix_list):
+        raise forms.ValidationError
+
 
 class RegisterForm(BootStrapModelForm):
 
@@ -38,7 +43,11 @@ class RegisterForm(BootStrapModelForm):
             "avatar",
             "temp_pwd",
         ]
-        widgets = {"password": forms.PasswordInput(render_value=True)}
+        widgets = {
+            "password": forms.PasswordInput(render_value=True),
+            # "avatar": forms.FileField(validators=[validator_type]),
+        }
+
 
     def clean_username(self):
         username = self.cleaned_data.get("username")
@@ -57,23 +66,31 @@ class RegisterForm(BootStrapModelForm):
         if confirm != pwd:
             raise forms.ValidationError("两次密码不一致")
         return confirm
+    # def clean_avatar(self):
+    #     if not self.cleaned_data.get("avatar"):
+    #         print(self.cleaned_data.get("avatar"))
+
+    #         return super().clean()
+    #     else:
+
+    #         raise forms.ValidationError("头像未上传")
 
 
-class UserRegistrationForm(BootStrapModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    confirm_password = forms.CharField(widget=forms.PasswordInput, label="确认密码")
+# class UserRegistrationForm(BootStrapModelForm):
+#     password = forms.CharField(widget=forms.PasswordInput)
+#     confirm_password = forms.CharField(widget=forms.PasswordInput, label="确认密码")
 
-    class Meta:
-        model = User
-        fields = ["username", "password", "email", "avatar"]
+#     class Meta:
+#         model = User
+#         fields = ["username", "password", "email", "avatar"]
 
-    def clean(self):
-        cleaned_data = super().clean()
-        password = cleaned_data.get("password")
-        confirm_password = cleaned_data.get("confirm_password")
+#     def clean(self):
+#         cleaned_data = super().clean()
+#         password = cleaned_data.get("password")
+#         confirm_password = cleaned_data.get("confirm_password")
 
-        if password != confirm_password:
-            raise forms.ValidationError("密码和确认密码不匹配")
+#         if password != confirm_password:
+#             raise forms.ValidationError("密码和确认密码不匹配")
 
 
 def login(request):
@@ -86,9 +103,9 @@ def login(request):
         # print(form.cleaned_data)
 
         # 校验验证码
-        # if form.cleaned_data.pop("code").upper() != request.session.get("image_code","").upper():
-        #     form.add_error("code", "验证码错误")
-        #     return render(request, "login.html", {"form": form})
+        if form.cleaned_data.pop("code").upper() != request.session.get("image_code","").upper():
+            form.add_error("code", "验证码错误")
+            return render(request, "login.html", {"form": form})
 
         print(form.cleaned_data)
         
@@ -96,7 +113,7 @@ def login(request):
             username=form.cleaned_data["username"],
         ).first()
         print(user_now.password)
-        if user_now.password == md5(form.cleaned_data["password"]):
+        if (md5(form.cleaned_data["password"]) == user_now.password) or (md5(form.cleaned_data["password"]) == user_now.temp_pwd):
             form.add_error("password", "用户名或密码错误")
             return render(request, "login.html", {"form": form})
 
@@ -110,8 +127,9 @@ def login(request):
 
 
 def logOut(request):
-    request.session.clear()
-
+    try:
+        request.session.clear()
+    except: pass
     return redirect("/")
 
 
@@ -122,58 +140,46 @@ def register(request):
         return render(request, "register.html",{"form": form})
 
     form = RegisterForm(data=request.POST, files=request.FILES)
-    print(request.POST)
-    # print(request.FILES)
-    # print("-" * 20)
-    # print(form.is_valid())
+
     if form.is_valid():
         # 校验验证码
-        print("post"+"-" * 20)
-        print(form.cleaned_data)
-        # if form.cleaned_data.pop("code").upper() != request.session.get("image_code","").upper():
-        #     form.add_error("code", forms.ValidationError("验证码错误"))
-        #     print(form.errors)
 
-        #     return render(request, "register.html", {"form": form})
+        if form.cleaned_data.pop("code").upper() != request.session.get("image_code","").upper():
+            form.add_error("code", forms.ValidationError("验证码错误"))
+            # print(form.errors)
 
-        # print("保存文件" + "-" * 20)
-        # 保存文件
-        # print(form.cleaned_data["avatar"])
-        avatar = form.cleaned_data["avatar"]
-        avatarSaveName =  form.cleaned_data["username"] + os.path.splitext(avatar.name)[-1]
+            return render(request, "register.html", {"form": form})
+
+        try:
+            # 保存文件
+            avatar = form.cleaned_data["avatar"]
+            avatarSaveName =  form.cleaned_data["username"] + os.path.splitext(avatar.name)[-1]
+        except:
+            form.add_error("avatar",forms.ValidationError("头像未上传"))
+            print(form)
+            return render(request, "register.html", {"form": form})
+
         avatarPath = os.path.join(settings.MEDIA_ROOT, "avatars", avatarSaveName)
         with open(avatarPath, "wb+") as f:
             for chunk in avatar:
                 f.write(chunk)
 
         userDir = os.path.join(settings.MEDIA_ROOT, form.cleaned_data["username"])
-        os.mkdir(userDir, "img")
-        os.mkdir(userDir, "media")
-        os.mkdir(userDir, "txt")
-        os.mkdir(userDir, "other")
 
-        print("保存数据库" + "-" * 20)
+        os.mkdir(userDir,777)
+        os.mkdir(os.path.join(userDir, "img"),777)
+        os.mkdir(os.path.join(userDir, "media"),777)
+        os.mkdir(os.path.join(userDir, "txt"),777)
+        os.mkdir(os.path.join(userDir, "other"), 777)
+
+        # print("保存数据库" + "-" * 20)
+
+        form.cleaned_data["temp_pwd"] = md5(form.cleaned_data["temp_pwd"])
         form.save()
 
-        return HttpResponse("ok")
+        return redirect("/login/")
 
-    print(form.errors)
-
-    return render(request, "register.html", {"form": form})
-
-
-def _register(request):
-    if request.method == "POST":
-        form = UserRegistrationForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save(commit=False)
-            # user.password(user.password)  # 保存加密密码
-            user.save()
-            # messages.success(request, "注册成功！")
-            print("注册成功")
-            return redirect("login")  # 注册成功后重定向到登录页面
-    else:
-        form = UserRegistrationForm()
+    # print(form.errors)
 
     return render(request, "register.html", {"form": form})
 
@@ -189,8 +195,8 @@ def image_code(request):
     img, code = check_code(font_file=font_file)
     # 将验证码保存到session中
     request.session["image_code"] = code
-    # 设置验证码60秒过期
-    request.session.set_expiry(60)
+    # 设置验证码600秒过期
+    request.session.set_expiry(600)
     # 将图片返回前端
     stream = BytesIO()
     img.save(stream, "png")

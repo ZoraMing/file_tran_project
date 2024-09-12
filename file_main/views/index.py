@@ -1,77 +1,65 @@
-from datetime import datetime
+import datetime
 import os
 
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseNotFound,JsonResponse
+from django.shortcuts import render,redirect
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
 
 from django.conf import settings
-from file_main.utils.bootstarp import BootStrapModelForm,BootStrapForm
-from file_main.utils.encrypt import md5,file_hash
+from file_main.utils.bootstarp import BootStrapModelForm, BootStrapForm
+from file_main.utils.encrypt import md5, file_hash
 from file_main.models import User, File
 from file_main.utils.get_file import get_file_path
 
 
-class UserForm(BootStrapModelForm):
-    class Meta:
-        model = User
-        fields = "__all__"
-
-
 class UpLoadForm(BootStrapForm):
 
-
     fileType = forms.ChoiceField(label="文件类型", choices=File.file_types_choices)
-    introduce = forms.CharField(label="介绍",widget=forms.Textarea)
+    introduce = forms.CharField(label="介绍", widget=forms.Textarea)
     fileLoad = forms.FileField(label="文件")
 
-    fields = ["file_type", "introduce","fileLoad"]
+    fields = ["file_type", "introduce", "fileLoad"]
 
+# a = [
+#         (
+#         "user5\\img\\DSC05498.JPG",
+#         "DSC05498",
+#         "img",
+#         5152,
+#         "山东人过犹不及你看\r\n现成GV会比较",
+#         datetime.datetime(
+#             2024, 9, 12, 12, 34, 22, 572569, tzinfo=datetime.timezone.utc
+#         ),
+#         6,
+#     ),
+# ]
 
 def index(request):
-
-    user_now = request.session.get("info")["id"]
-    # print(request.session.get("info"))
-    user_now = User.objects.get(id=user_now)
-
-    file_list = File.objects.filter(user_id=user_now.id).values_list('file_name','file_path','file_type','file_size','introduce','upload_time')
-    print(file_list)
+    try:
+        # user_id = request.session.get("info")["id"]
+        print(request.session.get("info"))
+        user_now = User.objects.get(id=request.session.get("info")["id"])
+    except:
+       return redirect("login")
+    
+    file_list = list(File.objects.filter(user_id=user_now.id).values_list(
+        "full_file_path","file_name", "file_type", "file_size", "introduce", "upload_time","id"
+    ))
+    # print(file_list)
     # print("-"*20)
 
-    user_now_file_path = get_file_path(request.session.get("info")["name"], settings.MEDIA_ROOT)
+    user_now_file_path = get_file_path(
+        request.session.get("info")["name"], settings.MEDIA_ROOT
+    )
 
     # print(user_now_file_path)
 
     form = UpLoadForm()
-    res = {"user_now": user_now, "user_now_file_path": user_now_file_path ,"form":form}
+    res = {"user_now": user_now, "user_now_file_list": file_list, "form": form}
 
     return render(request, "index.html", res)
-
-
-def addUser(request):
-    if request.method == "POST":
-
-        form = UserForm(data=request.POST, files=request.FILES)
-        if form.is_valid():
-            # 更改保存到磁盘的文件名字
-            user = form.save(commit=False)
-            user.avatar.name = f"{user.username}.jpg"
-            user.save()
-
-            print(form.cleaned_data)
-            return HttpResponse("ok")
-
-        res = {
-            "form": form,
-        }
-        return render(request, "upload.html", res)
-
-    form = UpLoadForm()
-    res = {"form": form}
-
-    return HttpResponse(request, res)
 
 
 @csrf_exempt
@@ -79,8 +67,7 @@ def upload(request):
     if request.method == "GET":
         return HttpResponse("upload")
 
-    # user_id = 5
-    user_now = User.objects.filter().first()
+    user_now = User.objects.get(id=request.session.get("info")["id"])
     # print(user_now.username)
     # print("-"*20)
     # print(request.POST)
@@ -98,7 +85,7 @@ def upload(request):
 
         # 服务器保存路径
         filePath = os.path.join(user_now.username, fileType)
-        fullFilePath = os.path.join(filePath,fileName+fileSuffix)
+        fullFilePath = os.path.join(filePath, fileName + fileSuffix)
         # print(fileName)
         # print(fileSuffix)
         # print(filePath)
@@ -119,46 +106,60 @@ def upload(request):
             file_suffix=fileSuffix,
             file_path=filePath,
             full_file_path=fullFilePath,
-            upload_time=datetime.now(),
+            upload_time=datetime.datetime.now(),
             user_id=user_now.id,
-            file_hash = fileHash,
+            file_hash=fileHash,
         )
         file_instance.save()
 
         return JsonResponse(
-            {"status": True,"msg": "上传成功"}
+            {"status": True, "msg": "上传成功"}
         )  # Replace 'success_url' with your success URL
 
-    errors = {field:error_list for field, error_list in form.errors.items()}
+    errors = {field: error_list for field, error_list in form.errors.items()}
     return JsonResponse({"status": False, "errors": errors})
 
-# D:\Project\FormVS\web\file_ex\file_tran\media\user1
 
 def download(request, pk):
-    try:
-        user = User.objects.filter(id=pk).first()
-        if user.avatar:
-            file_path = user.avatar.path
-            with open(file_path, "rb") as file:
-                response = HttpResponse(file.read(), content_type="image/jpeg")
-                response["Content-Disposition"] = (
-                    f'attachment; filename="{user.user_name}.jpg"'
+    user_now = User.objects.get(id=request.session.get("info")["id"])
+    download_file = File.objects.get(id=pk)
+    if not user_now.temp_login and download_file.user.id == user_now.id:
+        try:
+            if download_file:
+                file_path = os.path.join(
+                    settings.MEDIA_ROOT, download_file.full_file_path
                 )
-                return response
-    except User.DoesNotExist:
-        return HttpResponseNotFound("User not found")
-    except FileNotFoundError:
-        return HttpResponseNotFound("File not found")
+                # print(file_path)
+                with open(file_path, "rb") as file:
+                    response = HttpResponse(file.read(), content_type="image/jpeg")
+                    response["Content-Disposition"] = (
+                        f'attachment; filename="{download_file.file_name}.jpg"'
+                    )
+                    return response
+        except FileNotFoundError:
+            return HttpResponseNotFound("File not found")
+    else:
+        return HttpResponse("Forbidden")
 
 
 def delete(request, pk):
+    user_now = User.objects.get(id=request.session.get("info")["id"])
     try:
-        user = User.objects.filter(id=pk)
-        if user.avatar:
-            user.avatar.delete()
-            user.avatar = None
-            user.save()
-            return HttpResponse("File deleted successfully!")
-    except User.DoesNotExist:
-        return HttpResponseNotFound("User not found")
-    return HttpResponse("No file to delete")
+        download_file = File.objects.get(id=pk)
+    except:
+        return HttpResponseNotFound("File not found",stutus=404)
+
+    if not user_now.temp_login and download_file.user.id == user_now.id:
+        try:
+            if download_file:
+                file_path = os.path.join(
+                    settings.MEDIA_ROOT, download_file.full_file_path
+                )
+                # print(file_path)
+                download_file.delete()
+                os.remove(file_path)
+            return redirect("/")
+        except FileNotFoundError:
+            return HttpResponseNotFound("File not found", status=404)
+    else:
+        return HttpResponse("Forbidden", status=403)

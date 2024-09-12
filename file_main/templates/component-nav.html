@@ -54,19 +54,23 @@
             /* 确保按钮固定在视口的位置 */
             bottom: 10px;
             right: 10px;
-            /* background-color: #007bff; */
+            background-color: #fafafafa;
             /* 设置背景颜色以便查看按钮 */
             /* color: #fff; */
             border: none;
             padding: 10px 20px;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 25px;
             width: 50px;
-            /* 设置按钮的宽度 */
+
             height: 50px;
             /* 设置按钮的高度 */
             overflow: hidden;
             /* 隐藏超出按钮边界的部分 */
+        }
+
+        #scrollTopButton:hover {
+            background-color: #9999;
         }
 
         #scrollTopButton img {
@@ -74,6 +78,32 @@
             width: 30px;
             height: auto;
             margin-left: -10px;
+
+        }
+
+        .user_avatar {
+            width: 140px;
+        }
+
+        .user-avatar:hover .info-panel {
+            display: block;
+        }
+
+        .info-panel {
+            display: none;
+            position: absolute;
+            /* 绝对定位 */
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 10px;
+
+            left: 100%;
+            top: 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            z-index: 1000;
+            /* 确保在最上层 */
         }
     </style>
     {% block style %}
@@ -83,32 +113,39 @@
 <body>
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/login/" style="width: 120px;">
+            <div class="navbar-brand user_avatar" onclick="location.href='/logout/'">
                 {% block user_now %}
-                        <img src="{% static 'icon/bootstrap-icons/person-circle.svg' %}" alt="Default User Icon" style="width: 45px; height: auto;">
-                        username
-
+                <img src="{% static 'icon/bootstrap-icons/person-circle.svg' %}" alt="Default User Icon"
+                    style="width: 48px; height: auto;">
+                username
                 {% endblock %}
+                <div class="info-panel">
+                    更多信息...
+                </div>
+            </div>
 
-                <!-- <img src="{% static 'icon/bootstrap-icons/person-circle.svg' %}"></img>
-                username -->
-            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 nav-pills">
+                <ul class="navbar-nav me-auto md-2 nav-pills">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                        <a class="nav-link active" aria-current="page" href="/">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Link</a>
+                        <a class="nav-link" href="#">批量上传</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">下载</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">删除</a>
                     </li>
                 </ul>
                 <form class="d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                    <input class="form-control md-2" type="search" placeholder="搜索" aria-label="Search">
                     <button class="btn btn-outline-success" type="submit">
                         <img src="{%static 'icon/bootstrap-icons/search.svg'%}" width="20" height="20">
                     </button>
@@ -124,6 +161,18 @@
 
     {% endblock content %}
 
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <hr>
+                    <div class="footer-copyright">
+                        <p>© end.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 {% block script %}
 
