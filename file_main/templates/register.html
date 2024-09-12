@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{%static 'css/bootstrap.min.css'%}">
+    <script type="text/javascript" src="{%static 'js/bootstrap.min.js'%}"></script>
+    <title>Register</title>
+    <style>
+        .account {
+            width: 400px;
+            border: 1px solid #dddddd;
+            border-radius: 20px;
+            box-shadow: 5px 5px 20px #aaaaaa;
+
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 100px;
+            padding: 20px 40px;
+
+
+        }
+
+        .account h3 {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .account div {
+            padding: 5px 5px;
+        }
+
+        .img_code {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-gap: 10px;
+
+        }
+
+        .img_code img {
+            border: 2px solid #c3c3c3;
+            width: 100%;
+            height: 100%;
+        }
+
+        .button-container {
+            display: flex;
+            /* 启用 Flexbox 布局 */
+            justify-content: space-between;
+            /* 按钮在容器的两侧对齐 */
+            padding: 10px;
+            /* 容器的内边距 */
+        }
+
+        .button-container .btn {
+            width: 45%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="account">
+
+        {% comment %}
+        {% endcomment %}
+        <form method="POST"  enctype="multipart/form-data" novalidate>
+            <h3><img src="{%static 'icon/bootstrap-icons/person-circle.svg'%}" style="width: 25px;" />
+                Register</h3>
+            {% csrf_token %}
+            {% for field in form %}
+            {% if field == form.code %}
+            {% else %}
+            <div class="form-group">
+                <label>{{field.label}}</label>
+                {{field}}
+                <span style="color: red;">{{field.errors.0}}</span>
+            </div>
+
+            {% endif %}
+            {% endfor %}
+            <div class="form-group">
+                <label>图片验证码</label>
+                <div class="img_code">
+                    <div>
+                        {{form.code}}
+                        <span style="color: red;">{{form.code.errors.0}}</span>
+                    </div>
+                    <div>
+                        <img src="/img_code/" alt="验证码" style="width: 120px;height: auto;">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">确认注册</button>
+
+        </form>
+        
+
+
+
+<!-- <h2>用户注册</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">注册</button>
+</form> -->
+
+    </div>
+</body>
+
+
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static 'js/bootstrap.min.js' %}"></script>
+
+    <title>
+        {% block title %}
+        {% endblock title %}
+
+    </title>
+
+    <style>
+        .container {
+            margin-top: 5px;
+        }
+
+        .nav-pills .nav-link {
+            background-color: #f0f0f0;
+            /* 胶囊的背景色 */
+            color: #000;
+            margin: 5px 5px 5px 5px;
+        }
+
+        .nav-pills .nav-link:hover {
+            background-color: #1f7adc81;
+            /* 悬浮时的背景色 */
+            color: #fff;
+            /* 悬浮时的文字颜色 */
+        }
+
+        .nav-pills .nav-link.active {
+            background-color: #1f7adcba;
+            /* 选中时的背景色 */
+            color: #fff;
+        }
+
+        .right-bar {
+            margin: 5px;
+            position: -webkit-sticky;
+            /* Safari 使用粘性布局要添加此属性 */
+            position: sticky;
+            top: 10px;
+            padding: 5px;
+        }
+
+
+        #scrollTopButton {
+            display: none;
+            position: fixed;
+            /* 确保按钮固定在视口的位置 */
+            bottom: 10px;
+            right: 10px;
+            /* background-color: #007bff; */
+            /* 设置背景颜色以便查看按钮 */
+            /* color: #fff; */
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 50px;
+            /* 设置按钮的宽度 */
+            height: 50px;
+            /* 设置按钮的高度 */
+            overflow: hidden;
+            /* 隐藏超出按钮边界的部分 */
+        }
+
+        #scrollTopButton img {
+
+            width: 30px;
+            height: auto;
+            margin-left: -10px;
+        }
+    </style>
+    {% block style %}
+    {% endblock style %}
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/login/" style="width: 120px;">
+                {% block user_now %}
+                        <img src="{% static 'icon/bootstrap-icons/person-circle.svg' %}" alt="Default User Icon" style="width: 45px; height: auto;">
+                        username
+
+                {% endblock %}
+
+                <!-- <img src="{% static 'icon/bootstrap-icons/person-circle.svg' %}"></img>
+                username -->
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Link</a>
+                    </li>
+                </ul>
+                <form class="d-flex" role="search">
+                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">
+                        <img src="{%static 'icon/bootstrap-icons/search.svg'%}" width="20" height="20">
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <button id="scrollTopButton" onclick="scrollToTop()">
+        <img src="{% static 'icon/bootstrap-icons/arrow-up-circle.svg' %}" />
+    </button>
+    {% block content %}
+
+    {% endblock content %}
+
+</body>
+{% block script %}
+
+{% endblock script %}
+<script>
+    function scrollToTop() {
+        // 页面滚动的动画效果
+        window.scrollTo({
+            top: 0, // 滚动到页面顶部
+            behavior: 'smooth' // 平滑滚动
+        });
+    }
+
+    window.addEventListener('scroll', function () {
+        var scrollTopButton = document.getElementById('scrollTopButton');
+
+        // 如果页面滚动超过100px，显示按钮；否则隐藏按钮
+        if (window.scrollY > 100) {
+            scrollTopButton.style.display = 'block';
+        } else {
+            scrollTopButton.style.display = 'none';
+        }
+    });
+
+
+
+</script>
+
+</html>

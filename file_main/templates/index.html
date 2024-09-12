@@ -1,0 +1,186 @@
+{% extends "component-nav.html" %}
+{% load static %}
+
+{% block style %}
+<style>
+    .myfiles {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .myfile-block {
+        margin: 5px;
+        flex: 1 1 calc(33.333% - 10px);
+        /* 使每个卡片占用3分之一的宽度，减去总外边距 */
+        box-sizing: border-box;
+        /* 确保宽度计算包括内边距和边框 */
+        min-height: 350px;
+        max-height: 500px;
+    }
+
+    .myfile-block:hover {
+        background-color: #f8f9fa;
+    }
+
+    .card {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .text-container {
+        max-height: 100px;
+        /* 设置最大高度 */
+        overflow: hidden;
+        /* 超出部分隐藏 */
+        text-overflow: ellipsis;
+        /* 文字超出部分显示省略号 */
+        display: -webkit-box;
+        /* 创建一个弹性盒子 */
+        -webkit-line-clamp: 4;
+        /* 限制显示的行数（适用于多行文本） */
+        -webkit-box-orient: vertical;
+        /* 垂直方向的弹性布局 */
+    }
+
+    .img-container {
+        max-height: 300px;
+        overflow: hidden;
+    }
+</style>
+{% endblock style %}
+
+
+{% block user_now %}
+{{ user_now.username }}
+<img src="/media/{{ user_now.avatar }}" alt="{{user_now.username}} Icon" style="width: 45px; height: auto;" />
+{% endblock user_now %}
+
+
+{% block content %}
+<div class="container-xl">
+    <div class="row">
+        <div class="myfiles col-md-8 ">
+            {% for file_path in user_now_file_path %}
+            <div class="myfile-block img-container card ">
+                <div class="card-body">
+                    <h5 class="card-title">Card title</h5>
+                    <p class=" text-container">Lorem ipsum dolor sit amet,
+                        consectetur adipiscing elit,
+                        sed do eiusmod tempor incididunt
+                        utlabore et dolore magna
+                    </p>
+                    <img class="img-thumbnail" src="/media{{file_path}}" />
+                </div>
+            </div>
+            {% endfor %}
+
+
+        </div>
+        <div class="col-md-4">
+            <div class="right-bar card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        操作
+                    </h5>
+                    <p class=" card-text">这里是</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadPandal">
+                        上传文件
+                    </button>
+                </div>
+            </div>
+            <button id="scrollTopButton" onclick="scrollToTop()">
+                <img src="{%static 'icon/bootstrap-icons/arrow-up-circle-fill.svg'%}" />
+            </button>
+
+
+        </div>
+    </div>
+</div>
+
+
+<!-- 上传对话框 -->
+<div class="modal fade" id="uploadPandal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">File Load</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formLoad" method="post" enctype="multipart/form-data" novalidate>
+                    <div class="clearfix">
+                        {% for obj in form %}
+                        <div class="form-group" style="margin:5px;">
+                            <label>{{ obj.label }}</label>
+                            {{obj}}
+                            <span style="color: red;" class="error_msg">{{ obj.errors.0 }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="btn_save_file">确认</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button type="button" id="btn1">btn1</button>
+
+
+{% endblock content %}
+
+
+
+{% block script %}
+<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+<script>
+    $(document).ready(function () {
+        bindBtnLoad_file();
+        bindbtn1();
+    });
+
+    function bindbtn1() {
+        $("#btn1").click(function () {
+            alert("btn1");
+        });
+    }
+
+    function bindBtnLoad_file() {
+        $('#btn_save_file').click(function () {
+            console.log("cilck....");
+            $(".error_msg").empty();
+
+            var formData = new FormData($('#formLoad')[0]);
+
+            $.ajax({
+                url: "/upload/",
+                type: "POST",
+                data: formData,
+                processData: false,  
+                contentType: false,  
+                dataType: "json",
+                success: function (data) {
+                    if (data.status) {
+                        alert(data.msg);
+                        // 清空表单
+                        $("#formLoad")[0].reset();
+                        // 关闭对话框
+                        $("#uploadPandal").modal("hide");
+                        // 重载页面
+                        location.reload();
+                    } else {
+                        $.each(data.errors, function (name, errorList) {
+                            $("#id_" + name).next().text(errorList[0]);
+                        });
+                        console.log(data.errors);
+                        
+                    }
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}
