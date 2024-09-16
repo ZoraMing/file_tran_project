@@ -5,7 +5,7 @@ from django.shortcuts import render,redirect
 from django import forms
 
 from file_main.utils.bootstarp import BootStrapForm,BootStrapModelForm
-from file_main.models import User
+from file_main.models import User,File
 from file_main.utils.img_code import check_code
 from file_main.utils.encrypt import md5
 
@@ -76,23 +76,6 @@ class RegisterForm(BootStrapModelForm):
     #         raise forms.ValidationError("头像未上传")
 
 
-# class UserRegistrationForm(BootStrapModelForm):
-#     password = forms.CharField(widget=forms.PasswordInput)
-#     confirm_password = forms.CharField(widget=forms.PasswordInput, label="确认密码")
-
-#     class Meta:
-#         model = User
-#         fields = ["username", "password", "email", "avatar"]
-
-#     def clean(self):
-#         cleaned_data = super().clean()
-#         password = cleaned_data.get("password")
-#         confirm_password = cleaned_data.get("confirm_password")
-
-#         if password != confirm_password:
-#             raise forms.ValidationError("密码和确认密码不匹配")
-
-
 def login(request):
     if request.method == "GET":
         form = LoginForm()
@@ -102,6 +85,13 @@ def login(request):
     if form.is_valid():
         # print(form.cleaned_data)
 
+        user_now = User.objects.filter(
+            username=form.cleaned_data["username"],
+        ).first()
+        if user_now is None:
+            form.add_error("username",f"用户: {form.cleaned_data["username"]} 不存在")
+            return render(request, "login.html", {"form": form})
+            
         # 校验验证码
         if form.cleaned_data.pop("code").upper() != request.session.get("image_code","").upper():
             form.add_error("code", "验证码错误")
@@ -109,9 +99,6 @@ def login(request):
 
         print(form.cleaned_data)
         
-        user_now = User.objects.filter(
-            username=form.cleaned_data["username"],
-        ).first()
         print(user_now.password)
         if (md5(form.cleaned_data["password"]) == user_now.password) or (md5(form.cleaned_data["password"]) == user_now.temp_pwd):
             form.add_error("password", "用户名或密码错误")
@@ -153,13 +140,20 @@ def register(request):
         try:
             # 保存文件
             avatar = form.cleaned_data["avatar"]
+            org_avatar_name = avatar.name
             avatarSaveName =  form.cleaned_data["username"] + os.path.splitext(avatar.name)[-1]
-        except:
+            print(os.path.splitext(avatar.name)[-1])
+            
+            avatarPath = os.path.join(settings.MEDIA_ROOT, "avatars", avatarSaveName)
+            # print(form)
+
+        except Exception as e:
             form.add_error("avatar",forms.ValidationError("头像未上传"))
-            print(form)
+            print(e)
             return render(request, "register.html", {"form": form})
 
-        avatarPath = os.path.join(settings.MEDIA_ROOT, "avatars", avatarSaveName)
+            # 删除原始临时文件
+            
         with open(avatarPath, "wb+") as f:
             for chunk in avatar:
                 f.write(chunk)
@@ -174,14 +168,67 @@ def register(request):
 
         # print("保存数据库" + "-" * 20)
 
+        form.cleaned_data["avatar"].name = avatarSaveName
         form.cleaned_data["temp_pwd"] = md5(form.cleaned_data["temp_pwd"])
+        print(form.cleaned_data)
         form.save()
+        
+        temp_file_path = os.path.join(settings.MEDIA_ROOT, "avatars", org_avatar_name)
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            
 
         return redirect("/login/")
 
     # print(form.errors)
 
     return render(request, "register.html", {"form": form})
+
+
+def remove_user(request):
+
+    if request.method == "POST":
+        try:
+            user_id = request.session.get("info")["id"]  
+        except KeyError:
+            
+            return redirect("/login/")
+
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return redirect("/login/")
+
+        user_file = File.objects.filter(user_id=user_id).all()
+
+        user_dir = os.path.join(settings.MEDIA_ROOT, user.username)
+
+        # 删除用户文件
+        for f in user_file:
+            f.delete()
+
+        # 删除用户
+    
+        import shutil
+        # 检查并删除空目录
+        if os.path.exists(user_dir):
+            shutil.rmtree(user_dir)
+
+        # 获取头像路径
+        avatar_path = os.path.join(settings.MEDIA_ROOT, str(user.avatar))
+        print(avatar_path)
+        if os.path.exists(avatar_path):
+            if os.path.exists(avatar_path):
+                os.remove(avatar_path)
+
+        user.delete()
+        
+        request.session.clear()
+
+        # logger.info(f"Deleted user id={user_id} successfully")
+        return redirect("/login/")
+
+
+    return redirect("/login/")
 
 
 from django.conf import settings

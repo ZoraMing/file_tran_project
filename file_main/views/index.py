@@ -42,8 +42,8 @@ def index(request):
         print(request.session.get("info"))
         user_now = User.objects.get(id=request.session.get("info")["id"])
     except:
-       return redirect("login")
-    
+        return redirect("login")
+
     file_list = list(File.objects.filter(user_id=user_now.id).values_list(
         "full_file_path","file_name", "file_type", "file_size", "introduce", "upload_time","id"
     ))
@@ -59,6 +59,10 @@ def index(request):
     form = UpLoadForm()
     res = {"user_now": user_now, "user_now_file_list": file_list, "form": form}
 
+    # response = render(request, "index.html", res)
+    # response['Connection'] = 'keep-alive'
+    # response['Keep-Alive'] = 'timeout=300,max=1000'
+    # return response
     return render(request, "index.html", res)
 
 

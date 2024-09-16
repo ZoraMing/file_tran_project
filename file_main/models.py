@@ -29,21 +29,14 @@ class User(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        # 如果头像有变化，删除旧头像
-        if self.pk:
-            try:
-                old_avatar = User.objects.get(pk=self.pk).avatar
-                if old_avatar and old_avatar != self.avatar:
-                    old_avatar.delete(save=False)
-            except User.DoesNotExist:
-                pass
-
+        
         # 保存当前对象
         super().save(*args, **kwargs)
 
         # 处理头像命名
         if self.avatar:
-            self.avatar.name = f"avatars/{self.username}.jpg"
+            avatarSaveName = self.username + os.path.splitext(self.avatar.name)[-1]
+            self.avatar.name = f"avatars/{avatarSaveName}"
             super().save(*args, **kwargs)
 
 

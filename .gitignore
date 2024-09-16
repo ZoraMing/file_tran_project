@@ -1,0 +1,8 @@
+# 忽略所有 __pycache__ 目录及其中的内容
+__pycache__/
+
+# 忽略 media 目录下除 avatars 目录之外的所有文件和目录
+media/*/
+!media/avatars/
+
+temp.py

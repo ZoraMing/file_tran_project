@@ -8,17 +8,31 @@
         flex-wrap: wrap;
     }
 
-    .myfile-block {
+    .img-block {
         margin: 5px;
         flex: 1 1 calc(33.333% - 10px);
         /* 使每个卡片占用3分之一的宽度，减去总外边距 */
         box-sizing: border-box;
         /* 确保宽度计算包括内边距和边框 */
-        min-height: 350px;
+        min-height: 400px;
+        max-height: 600px;
+    }
+
+    .img-block:hover {
+        background-color: #f8f9fa;
+    }
+
+    .txt-block {
+        margin: 5px;
+        flex: 1 1 calc(33.333% - 10px);
+        /* 使每个卡片占用3分之一的宽度，减去总外边距 */
+        box-sizing: border-box;
+        /* 确保宽度计算包括内边距和边框 */
+        min-height: 200px;
         max-height: 500px;
     }
 
-    .myfile-block:hover {
+    .txt-block:hover {
         background-color: #f8f9fa;
     }
 
@@ -28,14 +42,10 @@
     }
 
     .text-container {
-        max-height: 100px;
-        /* 设置最大高度 */
+        max-height: 75px;
         overflow: hidden;
-        /* 超出部分隐藏 */
         text-overflow: ellipsis;
-        /* 文字超出部分显示省略号 */
         display: -webkit-box;
-        /* 创建一个弹性盒子 */
         -webkit-line-clamp: 4;
         /* 限制显示的行数（适用于多行文本） */
         -webkit-box-orient: vertical;
@@ -45,6 +55,16 @@
     .img-container {
         max-height: 300px;
         overflow: hidden;
+    }
+
+    .card-title {
+        max-height: 100px;
+    }
+
+    .card-footer {
+        display: flex;
+        align-items: end;
+        min-height: 50px;
     }
 </style>
 {% endblock style %}
@@ -61,37 +81,127 @@
 <div class="container-md">
     <div class="row">
         <div class="myfiles col-md-8 ">
-            {% for file in user_now_file_list %}
+            <div class="row">
+                <h4>图片</h4>
+                <br>
+                {% for file in user_now_file_list %}
                 {% if file.2 == 'img' %}
-                <div class="myfile-block img-container card ">
+                <div class="img-block img-container card ">
                     <div class="card-body">
                         <h5 class="card-title">{{file.1}}</h5>
                         <p class="card-text">{{file.3}} KB
-                            <p class=" text-container">{{file.4}}</p>
+                        <p class=" text-container">{{file.4}}</p>
                         </p>
                         <a href="/media/{{file.0}}" target="_blank">
                             <img class="img-thumbnail" src="/media/{{file.0}}" />
                         </a>
                     </div>
-                    <div class="card-footer"  style="display: flex; align-items:end;">
+                    <div class="card-footer">
                         <div class="btn-group" style="height: 24px;">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.href='/download/{{file.6}}'" target="_bank">
-                                <img src="{% static 'icon/bootstrap-icons/download.svg' %}" width="10" height="10"></img>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/download/{{file.6}}'" target="_bank">
+                                <img src="{% static 'icon/bootstrap-icons/download.svg' %}" width="10"
+                                    height="10"></img>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.href='/delete/{{file.6}}'">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/delete/{{file.6}}'">
                                 <img src="{% static 'icon/bootstrap-icons/trash.svg' %}" width="10" height="10"></img>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-secondary">
-                                <img src="{% static 'icon/bootstrap-icons/three-dots.svg' %}" width="10" height="10"></img>
+                                <img src="{% static 'icon/bootstrap-icons/three-dots.svg' %}" width="10"
+                                    height="10"></img>
                             </button>
                         </div>
-                        <div class="form-check form-check-inline" style="position: relative; margin-left: 8px; background-color: f1f1f1f1;">
-                            <input class="form-check-input" style=" width: 40px;height: 20px;" type="checkbox" value="{{file.6}}">
+                        <div class="form-check form-check-inline"
+                            style="position: relative; margin-left: 8px; background-color: f1f1f1f1;">
+                            <input class="form-check-input" style=" width: 40px;height: 20px;" type="checkbox"
+                                value="{{file.6}}">
                         </div>
                     </div>
                 </div>
                 {% endif %}
-            {% endfor %}
+                {% endfor %}
+            </div>
+
+            <div class="row">
+                <h4>文档</h4>
+                <br>
+                {% for file in user_now_file_list %}
+
+                {% if file.2 == 'txt'%}
+                <div class="txt-block card ">
+                    <div class="card-body">
+                        <h5 class="card-title">{{file.1}}</h5>
+                        <p class="card-text">{{file.3}} KB</p>
+                        <p class="">{{file.4}}</p>
+                        <pre id=""></pre>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group" style="height: 24px;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/download/{{file.6}}'" target="_bank">
+                                <img src="{% static 'icon/bootstrap-icons/download.svg' %}" width="10"
+                                    height="10"></img>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/delete/{{file.6}}'">
+                                <img src="{% static 'icon/bootstrap-icons/trash.svg' %}" width="10" height="10"></img>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <img src="{% static 'icon/bootstrap-icons/three-dots.svg' %}" width="10"
+                                    height="10"></img>
+                            </button>
+                        </div>
+                        <div class="form-check form-check-inline"
+                            style="position: relative; margin-left: 8px; background-color: f1f1f1f1;">
+                            <input class="form-check-input" style=" width: 40px;height: 20px;" type="checkbox"
+                                value="{{file.6}}">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <div class="row">
+                <h4>媒体和其他</h4>
+                <br>
+                {% for file in user_now_file_list %}
+
+                {% if file.2 == 'media' or file.2 == 'other'%}
+                <div class="txt-block card ">
+                    <div class="card-body">
+                        <h5 class="card-title">{{file.1}}</h5>
+                        <p class="card-text">{{file.3}} KB
+                        <p class="">{{file.4}}</p>
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group" style="height: 24px;">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/download/{{file.6}}'" target="_bank">
+                                <img src="{% static 'icon/bootstrap-icons/download.svg' %}" width="10"
+                                    height="10"></img>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="location.href='/delete/{{file.6}}'">
+                                <img src="{% static 'icon/bootstrap-icons/trash.svg' %}" width="10" height="10"></img>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <img src="{% static 'icon/bootstrap-icons/three-dots.svg' %}" width="10"
+                                    height="10"></img>
+                            </button>
+                        </div>
+                        <div class="form-check form-check-inline"
+                            style="position: relative; margin-left: 8px; background-color: f1f1f1f1;">
+                            <input class="form-check-input" style=" width: 40px;height: 20px;" type="checkbox"
+                                value="{{file.6}}">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
         </div>
         <div class="col-md-4">
             <div class="right-bar card">
@@ -145,10 +255,7 @@
 </div>
 
 <!-- <button type="button" id="btn1">btn1</button> -->
-
-
 {% endblock content %}
-
 
 
 {% block script %}

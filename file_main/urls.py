@@ -11,4 +11,5 @@ urlpatterns = [
     path("img_code/", login.image_code, name="img_code"),
     path("logout/", login.logOut, name="logout"),
     path("register/", login.register, name="register"),
+    path("remove_user/", login.remove_user, name="remove_user"),
 ]
