@@ -2,7 +2,7 @@ import datetime
 import os
 
 from django.shortcuts import render,redirect
-from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
+from django.http import FileResponse, HttpResponse, HttpResponseNotFound, JsonResponse
 
 from django import forms
 from django.views.decorators.csrf import csrf_exempt
@@ -123,25 +123,41 @@ def upload(request):
     errors = {field: error_list for field, error_list in form.errors.items()}
     return JsonResponse({"status": False, "errors": errors})
 
+from urllib.parse import quote
 
 def download(request, pk):
     user_now = User.objects.get(id=request.session.get("info")["id"])
     download_file = File.objects.get(id=pk)
+
+    if not download_file:
+        return HttpResponseNotFound("File not found", status=404) 
     if not user_now.temp_login and download_file.user.id == user_now.id:
         try:
-            if download_file:
-                file_path = os.path.join(
-                    settings.MEDIA_ROOT, download_file.full_file_path
+            file_path = os.path.join(
+                settings.MEDIA_ROOT, download_file.full_file_path
+            )
+            # print(download_file)
+            encoded_filename = quote(
+                f"{download_file.file_name}{download_file.file_suffix}",
+                safe="~@#$&()*!+=:;,.?/'",
+            )
+
+            with open(file_path, "rb") as file:
+                response = HttpResponse(file.read())
+                response['Content-Type']='application/octet-stream'  
+                # response["Content-Disposition"] = (
+                #     f'attachment; filename="{download_file.file_name}{download_file.file_suffix}"'
+                # )
+                response["Content-Disposition"] = (
+                    f'attachment; filename*=UTF-8\'\'' 
+                    f'{encoded_filename}'
                 )
-                # print(file_path)
-                with open(file_path, "rb") as file:
-                    response = HttpResponse(file.read(), content_type="image/jpeg")
-                    response["Content-Disposition"] = (
-                        f'attachment; filename="{download_file.file_name}.jpg"'
-                    )
-                    return response
+                return response
         except FileNotFoundError:
             return HttpResponseNotFound("File not found")
+        except Exception as e:
+            print(e)
+            return HttpResponse(f"下载 {download_file.file_name} 失败", status=500)
     else:
         return HttpResponse("Forbidden")
 
